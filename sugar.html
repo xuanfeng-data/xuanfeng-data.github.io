@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Xunyee-Charts</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/4.8.0/echarts.js"></script>
+	</head>
+    <body>
+
+
+       <div id="main" style="width:1500px;height:1000px"> </div>
+
+       <input id="datepicked" class="datepicker" data-date-format="yyyy-mm-dd">
+
+
+	
+    <script type="text/javascript">
+
+        $('.datepicker').datepicker({
+            format: 'yyyy-mm-dd',
+            startDate: '-30d'
+        });
+        $(".datepicker").datepicker("update", new Date());
+        $('.datepicker').datepicker()
+            .on('changeDate', function(e) {
+              xuanCharts($('.datepicker').val())
+            });
+        
+      var step = 5;
+      var times = [];
+      var xuantt = 0;
+
+      for (var i=0;xuantt<24*60; i++) {
+        var hh = Math.floor(xuantt/60); 
+        var mm = (xuantt%60);
+        times[i] = ("0" + hh).slice(-2) + ':' + ("0" + mm).slice(-2); 
+        xuantt = xuantt + step;
+      }
+
+
+      var names = ['希林娜依高', '赵粤', '王艺瑾', '陈卓璇', '郑乃馨', '刘些宁', '张艺凡'];
+      var users = {};
+      var userSeries = [];
+
+              $.ajax({
+              'async': false,
+              'global': false,
+              'url': "https://customstorage.oss-cn-hangzhou.aliyuncs.com/xunyee/xunyee_index.json",
+              'dataType': "json",
+              'success': function (data) {
+                  for (var key in names) {
+                      users[names[key]] = data[names[key]];
+
+                      userSeries.push({
+                                name: names[key],
+                                type: 'line',
+                                label: {
+                                    normal: {
+                                        show: false,
+                                        position: 'insideTopRight'
+                                    }
+                                },
+                                markPoint: {
+                                    symbolSize: 60,
+                                    data: [
+                                        {name: names[key], type: 'max'}
+                                    ],
+                                    label: {
+                                        show: true,
+                                        formatter: '{b}'
+
+                                    }
+                                },
+                                data: []
+                      });
+
+                  } 
+              }
+              });
+
+      var timeArray = [];
+      function xuanCharts(dateValue) {
+
+          for (key in names) {
+                  userSeries[key].data = [];
+
+              }
+
+          var option = {
+              title: {
+                  text: '硬糖少女寻艺买水图'
+              },
+              tooltip: {
+                  trigger: 'axis'
+              },
+              color: ['blue', '#fec42c', '#ffa022', '#40F10E', '#a6c84c', '#46bee9', 'gray', 'purple', 'red', '#dd4444', '#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae'],
+
+              legend: {
+                  display: true,
+                  top: '2%',
+                  labels: {
+                      fontColor: 'rgb(255, 99, 132)'
+                  },
+                  data: names
+              },
+              toolbox: {
+                  feature: {
+                  }
+              }, 
+              grid: {
+                  left: '3%',
+                  right: '4%',
+                  bottom: '3%',
+                  containLabel: true
+              },
+              xAxis: [{
+                  type: 'category',
+                  boundaryGap: false,
+                  data: times,
+                  axisLabel: {
+                    rotate: 40,
+                    interval: 5
+                  } 
+              }],
+              yAxis : [
+                  {
+                      type : 'value',
+                      position: 'left',
+                      <!--name: '签到数',-->
+                      nameLocation: 'end',
+                      nameTextStyle: {
+                          fontSize: 15,
+                          fontWeight: 'bolder',
+                      },
+                      min: 0,
+
+                  }
+              ],
+              series: []
+          };
+
+              $.ajax({
+              'async': false,
+              'global': false,
+              'url': "https://customstorage.oss-cn-hangzhou.aliyuncs.com/xunyee/"  + dateValue + ".json",
+              'dataType': "json",
+              'success': function (data) {
+                  for(var i = 0; i < data.length; i++){ 
+                      for (key in names) {
+                        if (data[i].hasOwnProperty(users[names[key]])) {
+                              userSeries[key].data.push(data[i][users[names[key]]]);
+                        } else {
+                              userSeries[key].data.push(0);
+                        }
+
+                      }
+                  }
+                  option.series = userSeries;
+              }
+              });
+
+
+                var myChart = echarts.init(document.getElementById("main"), "light");
+                var app = {};
+
+                if (option && typeof option === "object") {
+                    myChart.setOption(option, true);
+                    myChart.setOption({
+                        backgroundColor: 'rgba(128, 128, 128, 0.1)'
+                    })
+                }
+      }
+    
+      function getData() {
+           var dump = []
+           var dumpNames = names.slice();
+           dumpNames.unshift('时间/学员');
+           dump[0] = dumpNames;
+           for (var i = 0; i * 6 < userSeries[0].data.length; i++) {
+               dump[i+1] = [];
+               dump[i+1].push(times[6*i])
+
+               for (var j = 0; j < userSeries.length; j++) {
+               dump[i+1].push(userSeries[j].data[6*i])
+               }
+           }
+           
+           let csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+               + dump.map(e => e.join(",")).join("\n");
+           
+           var encodedUri = encodeURI(csvContent);
+           var link = document.createElement("a");
+           link.setAttribute("href", encodedUri);
+           link.setAttribute("download", "sugar_" + $('.datepicker').val() + ".csv");
+           link.click();
+      }
+
+      xuanCharts($('.datepicker').val())
+
+   </script>
+   </body>
+</html>
