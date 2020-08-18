@@ -42,18 +42,57 @@
       }
 
 
-      var userNames = ['希林娜依高', '赵粤', '王艺瑾', '陈卓璇', '郑乃馨', '刘些宁', '张艺凡', '姜贞羽', '徐艺洋']
+      var names = ['希林娜依高', '赵粤', '王艺瑾', '陈卓璇', '郑乃馨', '刘些宁', '张艺凡', '姜贞羽', '徐艺洋'];
+      var users = {};
+      var userSeries = [];
+
+              $.ajax({
+              'async': false,
+              'global': false,
+              'url': "https://customstorage.oss-cn-hangzhou.aliyuncs.com/xunyee/xunyee_index.json",
+              'dataType': "json",
+              'success': function (data) {
+                  for (var key in names) {
+                      users[names[key]] = data[names[key]];
+
+                      userSeries.push({
+                                name: names[key],
+                                type: 'line',
+                                label: {
+                                    normal: {
+                                        show: false,
+                                        position: 'insideTopRight'
+                                    }
+                                },
+                                markPoint: {
+                                    symbolSize: 60,
+                                    data: [
+                                        {name: names[key], type: 'max'}
+                                    ],
+                                    label: {
+                                        show: true,
+                                        formatter: '{b}'
+
+                                    }
+                                },
+                                data: []
+                      });
+
+                  } 
+              }
+              });
+
       var timeArray = [];
-      var userKeys = ['xl', 'zy', 'wyj', 'czx', 'nene', 'lxn', 'zyf', 'jzy', 'xyy'];
-
-      var userObject = {};
-      var dataObject = {};
-
       function xuanCharts(dateValue) {
+
+          for (key in names) {
+                  userSeries[key].data = [];
+
+              }
 
           var option = {
               title: {
-                  text: '寻艺实时监控'
+                  text: '硬糖少女寻艺签到记录'
               },
               tooltip: {
                   trigger: 'axis'
@@ -66,7 +105,7 @@
                   labels: {
                       fontColor: 'rgb(255, 99, 132)'
                   },
-                  data: userNames
+                  data: names
               },
               toolbox: {
                   feature: {
@@ -104,49 +143,26 @@
               series: []
           };
 
-          for(var i = 0; i < userKeys.length; i++){ 
-              userObject[userKeys[i]] = userNames[i]; 
-              dataObject[userKeys[i]] = [];
-
               $.ajax({
               'async': false,
               'global': false,
-              'url': "https://customstorage.oss-cn-hangzhou.aliyuncs.com/xunyee/" + userKeys[i] + "/" + dateValue + ".json",
+              'url': "https://customstorage.oss-cn-hangzhou.aliyuncs.com/xunyee/"  + dateValue + ".json",
               'dataType': "json",
               'success': function (data) {
-                  for (var key in data) {
-                     if (data.hasOwnProperty(key)) {
-                           dataObject[userKeys[i]].push(data[key].results[0].check);
-                     }
+                  for(var i = 0; i < data.length; i++){ 
+                      for (key in names) {
+                        if (data[i].hasOwnProperty(users[names[key]])) {
+                              userSeries[key].data.push(data[i][users[names[key]]]);
+                        } else {
+                              userSeries[key].data.push(0);
+                        }
+
+                      }
                   }
+                  option.series = userSeries;
               }
               });
 
-              var userSeries = {
-                        name: userNames[i],
-                        type: 'line',
-                        label: {
-                            normal: {
-                                show: false,
-                                position: 'insideTopRight'
-                            }
-                        },
-                        markPoint: {
-                            symbolSize: 60,
-                            data: [
-                                {name: userNames[i], type: 'max'}
-                            ],
-                            label: {
-                                show: true,
-                                formatter: '{b}'
-
-                            }
-                        },
-                        data: dataObject[userKeys[i]]
-                    };
-
-              option['series'].push(userSeries);
-          } 
 
                 var myChart = echarts.init(document.getElementById("main"), "light");
                 var app = {};
@@ -161,23 +177,16 @@
     
       function getData() {
            var dump = []
-           var dumpNames = userNames.slice();
+           var dumpNames = names.slice();
            dumpNames.unshift('时间/学员');
            dump[0] = dumpNames;
-           for (var i = 0; i * 6 < dataObject['xl'].length; i++) {
-            dump[i+1] = [];
-            dump[i+1].push([
-            times[6*i],
-            dataObject['xl'][6*i], 
-            dataObject['zy'][6*i], 
-            dataObject['wyj'][6*i],
-            dataObject['czx'][6*i],
-            dataObject['nene'][6*i],
-            dataObject['lxn'][6*i],
-            dataObject['zyf'][6*i],
-            dataObject['jzy'][6*i],
-            dataObject['xyy'][6*i]
-            ])
+           for (var i = 0; i * 6 < userSeries[0].data.length; i++) {
+               dump[i+1] = [];
+               dump[i+1].push(times[6*i])
+
+               for (var j = 0; j < userSeries.length; j++) {
+               dump[i+1].push(userSeries[j].data[6*i])
+               }
            }
            
            let csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
@@ -186,7 +195,7 @@
            var encodedUri = encodeURI(csvContent);
            var link = document.createElement("a");
            link.setAttribute("href", encodedUri);
-           link.setAttribute("download", "xunyee.csv");
+           link.setAttribute("download", "xunyee_" + $('.datepicker').val() + ".csv");
            link.click();
       }
 

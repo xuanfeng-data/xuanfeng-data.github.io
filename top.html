@@ -42,7 +42,7 @@
       }
 
 
-      var names= ['肖战', '王一博', '朱一龙', '杨洋', '蔡徐坤', '李现', '王俊凯', '刘雨昕'];
+      var names= ['肖战', '王一博', '朱一龙', '吴宣仪', '蔡徐坤', '李现', '王俊凯', '刘雨昕', '易烊千玺', '杨超越', '王源', '华晨宇'];
       var users = {};
       var userSeries = [];
 
@@ -97,7 +97,7 @@
               tooltip: {
                   trigger: 'axis'
               },
-              color: ['blue', '#fec42c', '#ffa022', '#40F10E', '#a6c84c', '#46bee9', 'gray', 'purple', 'red', '#dd4444', '#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae'],
+              //color: ['blue', '#fec42c', '#ffa022', '#40F10E', '#a6c84c', '#46bee9', 'gray', 'purple', 'red', '#dd4444', '#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae'],
 
               legend: {
                   display: true,
@@ -195,7 +195,7 @@
            var encodedUri = encodeURI(csvContent);
            var link = document.createElement("a");
            link.setAttribute("href", encodedUri);
-           link.setAttribute("download", "sugar_" + $('.datepicker').val() + ".csv");
+           link.setAttribute("download", "top_" + $('.datepicker').val() + ".csv");
            link.click();
       }
 
